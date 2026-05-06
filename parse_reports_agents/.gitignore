@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.env
+.pytest_cache/
+.mypy_cache/
+artifacts/*.json
+artifacts/*.log
+artifacts/*.png
+artifacts/*.html
+downloads/*.csv
+downloads/*.json
+output/*.xlsx
