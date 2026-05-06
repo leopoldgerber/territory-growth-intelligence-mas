@@ -1,4 +1,3 @@
-=======
 # Territory Growth Intelligence MAS
 
 Modular Semrush report pipeline migrated from `main-original.py`.
