@@ -1,0 +1,42 @@
+# Environment Variables
+
+## Core
+
+- `APP_ENV`
+- `DEBUG`
+- `FRONTEND_URL`
+- `CORS_ORIGINS`
+
+## Database
+
+- `POSTGRES_HOST`
+- `POSTGRES_PORT`
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+
+## Auth
+
+- `AUTH_SECRET_KEY`
+- `ACCESS_TOKEN_MINUTES`
+- `REFRESH_TOKEN_DAYS`
+
+## Background jobs
+
+- `REDIS_URL`
+- `CELERY_BROKER_URL`
+- `CELERY_RESULT_BACKEND`
+
+## Observability
+
+- `LOG_LEVEL`
+- `LOG_JSON`
+- `SENTRY_DSN`
+- `SENTRY_ENVIRONMENT`
+- `METRICS_ENABLED`
+- `WORKER_PING_ENABLED`
+
+## Uploads
+
+- `UPLOAD_STORAGE_PATH`
+- `MAX_UPLOAD_SIZE_MB`

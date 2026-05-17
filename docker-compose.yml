@@ -1,0 +1,113 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: tgi-redis
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  postgres:
+    image: postgres:15
+    container_name: tgi-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tgi_db}
+      POSTGRES_USER: ${POSTGRES_USER:-tgi_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tgi_password}
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-tgi_user} -d ${POSTGRES_DB:-tgi_db}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: tgi-backend
+    env_file:
+      - ./.env
+      - ./backend/.env
+    environment:
+      POSTGRES_HOST: postgres
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      UPLOAD_STORAGE_PATH: /app/uploads
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/1}
+    ports:
+      - '8000:8000'
+    volumes:
+      - backend_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ./backend
+    container_name: tgi-worker
+    env_file:
+      - ./.env
+      - ./backend/.env
+    environment:
+      POSTGRES_HOST: postgres
+      UPLOAD_STORAGE_PATH: /app/uploads
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/1}
+    command: celery -A app.worker.celery_app.celery_app worker --loglevel=info
+    volumes:
+      - backend_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  beat:
+    build:
+      context: ./backend
+    container_name: tgi-beat
+    env_file:
+      - ./.env
+      - ./backend/.env
+    environment:
+      POSTGRES_HOST: postgres
+      UPLOAD_STORAGE_PATH: /app/uploads
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/1}
+    command: celery -A app.worker.celery_app.celery_app beat --loglevel=info
+    volumes:
+      - backend_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: tgi-frontend
+    env_file:
+      - ./frontend/.env
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api}
+    ports:
+      - '5173:5173'
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  backend_uploads:
